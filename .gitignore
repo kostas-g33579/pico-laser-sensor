@@ -1,1 +1,25 @@
-build
+# Build artifacts
+build/
+*.uf2
+*.bin
+*.hex
+*.map
+*.elf
+
+# VS Code settings (keep tasks.json but ignore user settings)
+.vscode/settings.json
+.vscode/launch.json
+
+# Server data files (don't commit actual data)
+server/sensor_data.csv
+server/sensor_data.log
+server/debug.log
+server/*.db
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*~
