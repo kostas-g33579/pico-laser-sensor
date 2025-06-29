@@ -1,0 +1,216 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Pico Project",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "${workspaceFolder}/build", "--config", "Debug", "--target", "LASER_INIT"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Build the Raspberry Pi Pico project using CMake"
+        },
+        {
+            "label": "Clean and Build Pico Project",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "${workspaceFolder}/build", "--config", "Debug", "--target", "clean"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": ["Configure Pico Project"],
+            "detail": "Clean and rebuild the Pico project from scratch"
+        },
+        {
+            "label": "Configure Pico Project", 
+            "type": "shell",
+            "command": "cmake",
+            "args": ["-B", "${workspaceFolder}/build", "-S", "${workspaceFolder}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Configure CMake for the Pico project"
+        },
+        {
+            "label": "Start PHP Server",
+            "type": "shell",
+            "command": "php",
+            "args": ["-S", "0.0.0.0:8000"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "problemMatcher": [],
+            "detail": "Start PHP development server for sensor data collection",
+            "isBackground": true,
+            "runOptions": {
+                "instanceLimit": 1
+            }
+        },
+        {
+            "label": "Start PHP Server (Local Only)",
+            "type": "shell",
+            "command": "php",
+            "args": ["-S", "localhost:8000"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "problemMatcher": [],
+            "detail": "Start PHP server for local testing only (localhost)",
+            "isBackground": true
+        },
+        {
+            "label": "Flash Pico (Manual)",
+            "type": "shell",
+            "command": "echo",
+            "args": ["Please put Pico in BOOTSEL mode and copy ${workspaceFolder}/build/LASER_INIT.uf2 to the PICO drive"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "dependsOn": "Build Pico Project",
+            "detail": "Instructions to manually flash the Pico"
+        },
+        {
+            "label": "Build and Flash Pico",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Pico Project",
+                "Flash Pico (Manual)"
+            ],
+            "group": "test",
+            "detail": "Build the project and show flash instructions"
+        },
+        {
+            "label": "Full Setup: Build Pico + Start Server",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "Build Pico Project",
+                "Start PHP Server"
+            ],
+            "group": "test",
+            "detail": "Build Pico project and start PHP server simultaneously"
+        },
+        {
+            "label": "Show Network Info",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "echo Network Information: && ipconfig | findstr IPv4"],
+            "windows": {
+                "command": "cmd",
+                "args": ["/c", "echo Network Information: && ipconfig | findstr IPv4"]
+            },
+            "linux": {
+                "command": "bash",
+                "args": ["-c", "echo 'Network Information:' && hostname -I"]
+            },
+            "osx": {
+                "command": "bash", 
+                "args": ["-c", "echo 'Network Information:' && ifconfig | grep 'inet ' | grep -v 127.0.0.1"]
+            },
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Show your computer's IP address for configuring the Pico"
+        },
+        {
+            "label": "Test Server Connection",
+            "type": "shell",
+            "command": "curl",
+            "args": ["-X", "POST", "http://localhost:8000/receive_data.php", 
+                     "-H", "Content-Type: application/json",
+                     "-d", "{\"sensor1_raw\":1234,\"sensor1_voltage\":1.5,\"sensor2_raw\":2345,\"sensor2_voltage\":2.1,\"timestamp\":12345}"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Test the PHP server with sample sensor data"
+        },
+        {
+            "label": "Open Dashboard",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "start", "http://localhost:8000"],
+            "windows": {
+                "command": "cmd",
+                "args": ["/c", "start", "http://localhost:8000"]
+            },
+            "linux": {
+                "command": "xdg-open",
+                "args": ["http://localhost:8000"]
+            },
+            "osx": {
+                "command": "open",
+                "args": ["http://localhost:8000"]
+            },
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Open the sensor dashboard in your default browser"
+        }
+    ]
+}

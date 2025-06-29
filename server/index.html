@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Laser Sensor Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .sensor-card { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px; 
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .sensor-value { 
+            font-size: 3em; 
+            font-weight: bold; 
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .sensor-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .sensor-raw {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.online {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.offline {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Laser Sensor Dashboard</h1>
+        
+        <div id="status" class="status offline">
+            <div>Status: Initializing...</div>
+        </div>
+        
+        <div class="controls">
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+            <span style="margin: 0 20px;">Auto-refresh: ON</span>
+        </div>
+        
+        <div class="sensor-grid" id="sensor-grid">
+            <div class="sensor-card">
+                <div class="sensor-label">Sensor 1 (Photodiode 1)</div>
+                <div class="sensor-value" id="sensor1-voltage">--</div>
+                <div class="sensor-label">Voltage</div>
+                <div class="sensor-raw">Raw: <span id="sensor1-raw">--</span></div>
+            </div>
+            
+            <div class="sensor-card">
+                <div class="sensor-label">Sensor 2 (Photodiode 2)</div>
+                <div class="sensor-value" id="sensor2-voltage">--</div>
+                <div class="sensor-label">Voltage</div>
+                <div class="sensor-raw">Raw: <span id="sensor2-raw">--</span></div>
+            </div>
+        </div>
+        
+        <h2>📊 Recent Readings</h2>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Sensor 1 Voltage</th>
+                    <th>Sensor 1 Raw</th>
+                    <th>Sensor 2 Voltage</th>
+                    <th>Sensor 2 Raw</th>
+                </tr>
+            </thead>
+            <tbody id="data-tbody">
+                <tr>
+                    <td colspan="5" class="loading">
+                        🔄 Loading data...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let autoRefresh = true;
+        
+        async function loadData() {
+            try {
+                console.log('Loading data...');
+                const response = await fetch('get_data.php');
+                const data = await response.json();
+                
+                console.log('Server response:', data);
+                
+                if (data.status === 'success' && data.readings && data.readings.length > 0) {
+                    updateDisplay(data.readings);
+                    updateStatus(true, `Last updated: ${data.last_updated} (${data.count} total readings)`);
+                } else {
+                    updateStatus(false, 'No data available yet');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                updateStatus(false, 'Connection error: ' + error.message);
+            }
+        }
+        
+        function updateDisplay(readings) {
+            const latest = readings[0]; // Most recent reading
+            
+            // Update current readings
+            document.getElementById('sensor1-voltage').textContent = 
+                parseFloat(latest.sensor1_voltage).toFixed(3) + 'V';
+            document.getElementById('sensor1-raw').textContent = latest.sensor1_raw;
+            document.getElementById('sensor2-voltage').textContent = 
+                parseFloat(latest.sensor2_voltage).toFixed(3) + 'V';
+            document.getElementById('sensor2-raw').textContent = latest.sensor2_raw;
+            
+            // Update table
+            const tbody = document.getElementById('data-tbody');
+            tbody.innerHTML = '';
+            
+            readings.slice(0, 20).forEach(reading => { // Show last 20 readings
+                const row = tbody.insertRow();
+                const time = new Date(reading.server_timestamp);
+                row.insertCell(0).textContent = time.toLocaleString();
+                row.insertCell(1).textContent = parseFloat(reading.sensor1_voltage).toFixed(3) + 'V';
+                row.insertCell(2).textContent = reading.sensor1_raw;
+                row.insertCell(3).textContent = parseFloat(reading.sensor2_voltage).toFixed(3) + 'V';
+                row.insertCell(4).textContent = reading.sensor2_raw;
+            });
+        }
+        
+        function updateStatus(online, message = '') {
+            const statusEl = document.getElementById('status');
+            if (online) {
+                statusEl.className = 'status online';
+                statusEl.innerHTML = `<div>✅ Status: Online</div><div>${message}</div>`;
+            } else {
+                statusEl.className = 'status offline';
+                statusEl.innerHTML = `<div>❌ Status: Offline</div><div>${message}</div>`;
+            }
+        }
+        
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            if (autoRefresh) {
+                loadData();
+            }
+        }, 5000);
+        
+        // Initial load
+        loadData();
+        
+        console.log('Dashboard initialized');
+    </script>
+</body>
+</html>

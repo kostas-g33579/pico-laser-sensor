@@ -1,0 +1,11 @@
+=== REQUEST START ===
+{
+    "timestamp": "2025-06-22 06:55:33",
+    "method": "POST",
+    "remote_addr": "127.0.0.1",
+    "user_agent": "curl\/8.9.1",
+    "content_type": "unknown",
+    "content_length": "unknown"
+}
+Raw input received: 
+JSON decode error: {"error":"Invalid JSON data","raw_input":"","json_error":"Syntax error"}
