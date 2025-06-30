@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laser Sensor Dashboard</title>
+    <title>Particle Counter Dashboard</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -13,7 +13,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
             background: white;
             padding: 30px;
@@ -26,58 +26,124 @@
             margin-bottom: 30px;
             font-size: 2.5em;
         }
-        .sensor-grid {
+        .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        .sensor-card { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px; 
-            border-radius: 15px;
+        .status-card {
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .sensor-value { 
-            font-size: 3em; 
-            font-weight: bold; 
-            margin: 15px 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        .status-card.online {
+            background: linear-gradient(135deg, #28a745, #20c997);
         }
-        .sensor-label {
-            font-size: 1.1em;
+        .status-card.offline {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+        }
+        .status-card.counting {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            animation: pulse 2s infinite;
+        }
+        .status-card.calibrated {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .stat-title {
+            font-size: 0.9em;
             opacity: 0.9;
             margin-bottom: 10px;
         }
-        .sensor-raw {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-top: 10px;
-        }
-        .status {
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
+        .stat-value {
+            font-size: 2.5em;
             font-weight: bold;
+            margin: 10px 0;
         }
-        .status.online {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .stat-subtitle {
+            font-size: 0.8em;
+            opacity: 0.8;
         }
-        .status.offline {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .concentration-display {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .concentration-main {
+            font-size: 3.5em;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .concentration-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .interpretation {
+            background: #f8f9fa;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .interpretation.moderate {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+        .interpretation.high {
+            border-left-color: #dc3545;
+            background: #ffebee;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .result-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .result-card h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
         }
         .controls {
             text-align: center;
             margin: 20px 0;
         }
-        .refresh-btn {
+        .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 25px;
@@ -88,9 +154,13 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             transition: transform 0.2s;
+            margin: 0 10px;
         }
-        .refresh-btn:hover {
+        .btn:hover {
             transform: translateY(-2px);
+        }
+        .history-section {
+            margin-top: 30px;
         }
         table {
             width: 100%;
@@ -102,9 +172,10 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         th, td {
-            padding: 15px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #eee;
+            font-size: 0.9em;
         }
         th {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -114,138 +185,434 @@
         tr:nth-child(even) {
             background-color: #f8f9fa;
         }
-        tr:hover {
-            background-color: #e3f2fd;
-        }
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
             font-style: italic;
         }
+        .quality-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .quality-high { background: #d4edda; color: #155724; }
+        .quality-medium { background: #fff3cd; color: #856404; }
+        .quality-low { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔬 Laser Sensor Dashboard</h1>
+        <h1>🔬 Particle Counter Analysis Dashboard</h1>
         
-        <div id="status" class="status offline">
-            <div>Status: Initializing...</div>
+        <div class="status-grid">
+            <div class="status-card" id="connection-status">
+                <div class="stat-title">Connection Status</div>
+                <div class="stat-value" id="connection-icon">⚪</div>
+                <div class="stat-subtitle">Checking...</div>
+            </div>
+            
+            <div class="status-card" id="system-status">
+                <div class="stat-title">System Status</div>
+                <div class="stat-value" id="system-icon">⚪</div>
+                <div class="stat-subtitle" id="system-text">Initializing...</div>
+            </div>
+            
+            <div class="status-card" id="measurement-status">
+                <div class="stat-title">Last Measurement</div>
+                <div class="stat-value" id="measurement-time">--</div>
+                <div class="stat-subtitle">Minutes ago</div>
+            </div>
+        </div>
+        
+        <div class="concentration-display" id="concentration-display">
+            <div class="concentration-subtitle">Total Particle Concentration</div>
+            <div class="concentration-main" id="total-concentration">-- particles/min</div>
+            <div class="concentration-subtitle">Combined sensors average</div>
+        </div>
+        
+        <div class="interpretation" id="interpretation">
+            <h3>📋 Sample Analysis</h3>
+            <p id="interpretation-text">Waiting for measurement data...</p>
         </div>
         
         <div class="controls">
-            <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
-            <span style="margin: 0 20px;">Auto-refresh: ON</span>
+            <button class="btn" onclick="loadData()">🔄 Refresh Data</button>
+            <button class="btn" onclick="exportData()">📊 Export CSV</button>
+            <button class="btn" onclick="clearHistory()">🗑️ Clear History</button>
         </div>
         
-        <div class="sensor-grid" id="sensor-grid">
-            <div class="sensor-card">
-                <div class="sensor-label">Sensor 1 (Photodiode 1)</div>
-                <div class="sensor-value" id="sensor1-voltage">--</div>
-                <div class="sensor-label">Voltage</div>
-                <div class="sensor-raw">Raw: <span id="sensor1-raw">--</span></div>
+        <div class="results-grid" id="results-grid">
+            <div class="result-card">
+                <h3>📊 Latest Measurement</h3>
+                <div class="metric">
+                    <span>Measurement Duration:</span>
+                    <span class="metric-value" id="latest-duration">-- seconds</span>
+                </div>
+                <div class="metric">
+                    <span>Sensor 1 Particles:</span>
+                    <span class="metric-value" id="latest-s1-particles">--</span>
+                </div>
+                <div class="metric">
+                    <span>Sensor 2 Particles:</span>
+                    <span class="metric-value" id="latest-s2-particles">--</span>
+                </div>
+                <div class="metric">
+                    <span>Total Particles:</span>
+                    <span class="metric-value" id="latest-total-particles">--</span>
+                </div>
             </div>
             
-            <div class="sensor-card">
-                <div class="sensor-label">Sensor 2 (Photodiode 2)</div>
-                <div class="sensor-value" id="sensor2-voltage">--</div>
-                <div class="sensor-label">Voltage</div>
-                <div class="sensor-raw">Raw: <span id="sensor2-raw">--</span></div>
+            <div class="result-card">
+                <h3>⚖️ Measurement Quality</h3>
+                <div class="metric">
+                    <span>Detection Quality:</span>
+                    <span class="metric-value" id="latest-quality">--</span>
+                </div>
+                <div class="metric">
+                    <span>False Positives (S1):</span>
+                    <span class="metric-value" id="latest-s1-false">--</span>
+                </div>
+                <div class="metric">
+                    <span>False Positives (S2):</span>
+                    <span class="metric-value" id="latest-s2-false">--</span>
+                </div>
+                <div class="metric">
+                    <span>Signal Stability:</span>
+                    <span class="metric-value" id="signal-stability">--</span>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <h3>🔧 System Parameters</h3>
+                <div class="metric">
+                    <span>Sensor 1 Baseline:</span>
+                    <span class="metric-value" id="latest-s1-baseline">-- V</span>
+                </div>
+                <div class="metric">
+                    <span>Sensor 2 Baseline:</span>
+                    <span class="metric-value" id="latest-s2-baseline">-- V</span>
+                </div>
+                <div class="metric">
+                    <span>Detection Threshold:</span>
+                    <span class="metric-value" id="detection-threshold">-- %</span>
+                </div>
+                <div class="metric">
+                    <span>System Calibrated:</span>
+                    <span class="metric-value" id="calibration-status">--</span>
+                </div>
             </div>
         </div>
         
-        <h2>📊 Recent Readings</h2>
-        <table id="data-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Sensor 1 Voltage</th>
-                    <th>Sensor 1 Raw</th>
-                    <th>Sensor 2 Voltage</th>
-                    <th>Sensor 2 Raw</th>
-                </tr>
-            </thead>
-            <tbody id="data-tbody">
-                <tr>
-                    <td colspan="5" class="loading">
-                        🔄 Loading data...
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="history-section">
+            <h2>📈 Measurement History</h2>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Duration</th>
+                        <th>S1 Particles</th>
+                        <th>S2 Particles</th>
+                        <th>Total Rate</th>
+                        <th>Quality</th>
+                        <th>Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    <tr>
+                        <td colspan="7" class="loading">Loading measurement history...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
+        let particleData = [];
         let autoRefresh = true;
         
         async function loadData() {
             try {
-                console.log('Loading data...');
-                const response = await fetch('get_data.php');
-                const data = await response.json();
-                
-                console.log('Server response:', data);
-                
-                if (data.status === 'success' && data.readings && data.readings.length > 0) {
-                    updateDisplay(data.readings);
-                    updateStatus(true, `Last updated: ${data.last_updated} (${data.count} total readings)`);
+                // Load particle count data
+                const response = await fetch('particle_counts.csv');
+                if (response.ok) {
+                    const csvText = await response.text();
+                    parseParticleData(csvText);
+                    updateDisplay();
+                    updateConnectionStatus(true);
                 } else {
-                    updateStatus(false, 'No data available yet');
+                    updateConnectionStatus(false);
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
-                updateStatus(false, 'Connection error: ' + error.message);
+                updateConnectionStatus(false);
             }
         }
         
-        function updateDisplay(readings) {
-            const latest = readings[0]; // Most recent reading
+        function parseParticleData(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length < 2) return;
             
-            // Update current readings
-            document.getElementById('sensor1-voltage').textContent = 
-                parseFloat(latest.sensor1_voltage).toFixed(3) + 'V';
-            document.getElementById('sensor1-raw').textContent = latest.sensor1_raw;
-            document.getElementById('sensor2-voltage').textContent = 
-                parseFloat(latest.sensor2_voltage).toFixed(3) + 'V';
-            document.getElementById('sensor2-raw').textContent = latest.sensor2_raw;
+            const header = lines[0].split(',');
+            particleData = [];
             
-            // Update table
-            const tbody = document.getElementById('data-tbody');
-            tbody.innerHTML = '';
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                if (values.length >= header.length) {
+                    const row = {};
+                    header.forEach((col, idx) => {
+                        row[col.replace(/"/g, '')] = values[idx].replace(/"/g, '');
+                    });
+                    
+                    // Convert numeric fields
+                    row.sensor1_particles = parseInt(row.sensor1_particles) || 0;
+                    row.sensor2_particles = parseInt(row.sensor2_particles) || 0;
+                    row.counting_duration_sec = parseInt(row.counting_duration_sec) || 0;
+                    row.sensor1_concentration_per_min = parseFloat(row.sensor1_concentration_per_min) || 0;
+                    row.sensor2_concentration_per_min = parseFloat(row.sensor2_concentration_per_min) || 0;
+                    
+                    particleData.push(row);
+                }
+            }
             
-            readings.slice(0, 20).forEach(reading => { // Show last 20 readings
-                const row = tbody.insertRow();
-                const time = new Date(reading.server_timestamp);
-                row.insertCell(0).textContent = time.toLocaleString();
-                row.insertCell(1).textContent = parseFloat(reading.sensor1_voltage).toFixed(3) + 'V';
-                row.insertCell(2).textContent = reading.sensor1_raw;
-                row.insertCell(3).textContent = parseFloat(reading.sensor2_voltage).toFixed(3) + 'V';
-                row.insertCell(4).textContent = reading.sensor2_raw;
-            });
+            // Sort by timestamp, most recent first
+            particleData.sort((a, b) => new Date(b.server_timestamp) - new Date(a.server_timestamp));
         }
         
-        function updateStatus(online, message = '') {
-            const statusEl = document.getElementById('status');
-            if (online) {
-                statusEl.className = 'status online';
-                statusEl.innerHTML = `<div>✅ Status: Online</div><div>${message}</div>`;
+        function updateDisplay() {
+            if (particleData.length === 0) {
+                updateNoDataDisplay();
+                return;
+            }
+            
+            const latest = particleData[0];
+            updateLatestMeasurement(latest);
+            updateConcentrationDisplay(latest);
+            updateInterpretation(latest);
+            updateHistoryTable();
+        }
+        
+        function updateLatestMeasurement(data) {
+            document.getElementById('latest-duration').textContent = data.counting_duration_sec + ' seconds';
+            document.getElementById('latest-s1-particles').textContent = data.sensor1_particles;
+            document.getElementById('latest-s2-particles').textContent = data.sensor2_particles;
+            
+            const total = data.sensor1_particles + data.sensor2_particles;
+            document.getElementById('latest-total-particles').textContent = total;
+            
+            // Quality metrics
+            const quality = parseFloat(data.measurement_quality.replace('%', '')) || 0;
+            document.getElementById('latest-quality').innerHTML = 
+                `<span class="quality-indicator quality-${quality > 80 ? 'high' : quality > 60 ? 'medium' : 'low'}">${data.measurement_quality}</span>`;
+            
+            document.getElementById('latest-s1-false').textContent = data.sensor1_false_positives || 0;
+            document.getElementById('latest-s2-false').textContent = data.sensor2_false_positives || 0;
+            
+            // System parameters
+            document.getElementById('latest-s1-baseline').textContent = parseFloat(data.sensor1_baseline).toFixed(4) + ' V';
+            document.getElementById('latest-s2-baseline').textContent = parseFloat(data.sensor2_baseline).toFixed(4) + ' V';
+            document.getElementById('detection-threshold').textContent = data.detection_threshold_percent + ' %';
+            document.getElementById('calibration-status').textContent = data.calibrated === 'true' ? '✅ Yes' : '❌ No';
+            
+            // Signal stability calculation
+            const s1_stability = Math.abs(parseFloat(data.avg_sensor1_voltage) - parseFloat(data.sensor1_baseline));
+            const s2_stability = Math.abs(parseFloat(data.avg_sensor2_voltage) - parseFloat(data.sensor2_baseline));
+            const avg_stability = (s1_stability + s2_stability) / 2;
+            document.getElementById('signal-stability').textContent = 
+                avg_stability < 0.05 ? '✅ Excellent' : avg_stability < 0.1 ? '⚠️ Good' : '❌ Poor';
+            
+            // Update measurement time
+            const measurementTime = new Date(data.server_timestamp);
+            const now = new Date();
+            const minutesAgo = Math.floor((now - measurementTime) / 60000);
+            document.getElementById('measurement-time').textContent = minutesAgo;
+        }
+        
+        function updateConcentrationDisplay(data) {
+            const avgConcentration = (data.sensor1_concentration_per_min + data.sensor2_concentration_per_min) / 2;
+            document.getElementById('total-concentration').textContent = 
+                avgConcentration.toFixed(1) + ' particles/min';
+            
+            const display = document.getElementById('concentration-display');
+            if (avgConcentration < 10) {
+                display.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+            } else if (avgConcentration < 100) {
+                display.style.background = 'linear-gradient(135deg, #ffc107, #fd7e14)';
             } else {
-                statusEl.className = 'status offline';
-                statusEl.innerHTML = `<div>❌ Status: Offline</div><div>${message}</div>`;
+                display.style.background = 'linear-gradient(135deg, #dc3545, #fd7e14)';
             }
         }
         
-        // Auto-refresh every 5 seconds
+        function updateInterpretation(data) {
+            const total = data.sensor1_particles + data.sensor2_particles;
+            const avgConcentration = (data.sensor1_concentration_per_min + data.sensor2_concentration_per_min) / 2;
+            const quality = parseFloat(data.measurement_quality.replace('%', '')) || 0;
+            
+            let interpretation = '';
+            let className = 'interpretation';
+            
+            if (total === 0) {
+                interpretation = '🧪 <strong>CLEAN SAMPLE</strong><br>No particles detected during the measurement period. This indicates a very clean sample with particle concentration below the detection threshold.';
+                className += '';
+            } else if (avgConcentration < 10) {
+                interpretation = '✨ <strong>LOW PARTICLE DENSITY</strong><br>Very clean sample with minimal contamination. Suitable for most applications requiring high purity.';
+                className += '';
+            } else if (avgConcentration < 100) {
+                interpretation = '⚠️ <strong>MODERATE PARTICLE DENSITY</strong><br>Some contamination detected. May require filtration or cleaning depending on application requirements.';
+                className += ' moderate';
+            } else {
+                interpretation = '🚨 <strong>HIGH PARTICLE DENSITY</strong><br>Significant contamination detected. Sample requires immediate attention, filtration, or cleaning before use.';
+                className += ' high';
+            }
+            
+            if (quality < 70) {
+                interpretation += '<br><br>⚠️ <em>Note: Measurement quality is below optimal. Consider recalibration or checking for system stability issues.</em>';
+            }
+            
+            document.getElementById('interpretation-text').innerHTML = interpretation;
+            document.getElementById('interpretation').className = className;
+        }
+        
+        function updateHistoryTable() {
+            const tbody = document.getElementById('history-tbody');
+            
+            if (particleData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">No measurement data available</td></tr>';
+                return;
+            }
+            
+            const rows = particleData.slice(0, 20).map(data => {
+                const time = new Date(data.server_timestamp).toLocaleString();
+                const total = data.sensor1_particles + data.sensor2_particles;
+                const avgRate = ((data.sensor1_concentration_per_min + data.sensor2_concentration_per_min) / 2).toFixed(1);
+                const quality = parseFloat(data.measurement_quality.replace('%', '')) || 0;
+                
+                let interpretation = '';
+                if (total === 0) interpretation = 'Clean';
+                else if (avgRate < 10) interpretation = 'Low density';
+                else if (avgRate < 100) interpretation = 'Moderate';
+                else interpretation = 'High density';
+                
+                return `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${data.counting_duration_sec}s</td>
+                        <td>${data.sensor1_particles}</td>
+                        <td>${data.sensor2_particles}</td>
+                        <td>${avgRate}/min</td>
+                        <td><span class="quality-indicator quality-${quality > 80 ? 'high' : quality > 60 ? 'medium' : 'low'}">${data.measurement_quality}</span></td>
+                        <td>${interpretation}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+        
+        function updateConnectionStatus(online) {
+            const statusCard = document.getElementById('connection-status');
+            const icon = document.getElementById('connection-icon');
+            const subtitle = statusCard.querySelector('.stat-subtitle');
+            
+            if (online) {
+                statusCard.className = 'status-card online';
+                icon.textContent = '🟢';
+                subtitle.textContent = 'Connected';
+            } else {
+                statusCard.className = 'status-card offline';
+                icon.textContent = '🔴';
+                subtitle.textContent = 'Disconnected';
+            }
+            
+            // Update system status
+            const systemCard = document.getElementById('system-status');
+            const systemIcon = document.getElementById('system-icon');
+            const systemText = document.getElementById('system-text');
+            
+            if (online && particleData.length > 0) {
+                systemCard.className = 'status-card calibrated';
+                systemIcon.textContent = '✅';
+                systemText.textContent = 'Operational';
+            } else {
+                systemCard.className = 'status-card offline';
+                systemIcon.textContent = '⚠️';
+                systemText.textContent = 'Waiting for data';
+            }
+        }
+        
+        function updateNoDataDisplay() {
+            document.getElementById('total-concentration').textContent = '-- particles/min';
+            document.getElementById('interpretation-text').textContent = 'No measurement data available. Waiting for particle counting results...';
+        }
+        
+        function exportData() {
+            if (particleData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Create enhanced CSV with calculated fields
+            const headers = ['timestamp', 'duration_sec', 's1_particles', 's2_particles', 'total_particles', 
+                           's1_rate_per_min', 's2_rate_per_min', 'avg_rate_per_min', 'quality', 'interpretation'];
+            
+            const csvContent = [
+                headers.join(','),
+                ...particleData.map(data => {
+                    const total = data.sensor1_particles + data.sensor2_particles;
+                    const avgRate = (data.sensor1_concentration_per_min + data.sensor2_concentration_per_min) / 2;
+                    let interpretation = '';
+                    if (total === 0) interpretation = 'Clean';
+                    else if (avgRate < 10) interpretation = 'Low_density';
+                    else if (avgRate < 100) interpretation = 'Moderate';
+                    else interpretation = 'High_density';
+                    
+                    return [
+                        data.server_timestamp,
+                        data.counting_duration_sec,
+                        data.sensor1_particles,
+                        data.sensor2_particles,
+                        total,
+                        data.sensor1_concentration_per_min,
+                        data.sensor2_concentration_per_min,
+                        avgRate.toFixed(2),
+                        data.measurement_quality,
+                        interpretation
+                    ].join(',');
+                })
+            ].join('\n');
+            
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'particle_analysis_' + new Date().toISOString().slice(0,10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function clearHistory() {
+            if (confirm('Clear all measurement history? This cannot be undone.')) {
+                // This would need server-side implementation
+                alert('Clear history functionality requires server-side implementation');
+            }
+        }
+        
+        // Auto-refresh every 10 seconds
         setInterval(() => {
             if (autoRefresh) {
                 loadData();
             }
-        }, 5000);
+        }, 10000);
         
         // Initial load
         loadData();
         
-        console.log('Dashboard initialized');
+        console.log('Particle counter dashboard initialized');
     </script>
 </body>
 </html>

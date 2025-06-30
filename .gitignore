@@ -10,10 +10,14 @@ build/
 .vscode/settings.json
 .vscode/launch.json
 
-# Server data files (don't commit actual data)
+# Server data files (don't commit actual measurement data)
 server/sensor_data.csv
-server/sensor_data.log
+server/voltage_data.csv
+server/particle_counts.csv
+server/particle_analysis.log
+server/voltage_readings.log
 server/debug.log
+server/latest_analysis.json
 server/*.db
 
 # System files
@@ -23,3 +27,16 @@ Thumbs.db
 # Temporary files
 *.tmp
 *~
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
